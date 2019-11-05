@@ -40,6 +40,7 @@ class Game
     @magic_word.each_with_index do |l, i|
       if l == letter
         @magic_word.delete_at(i)
+        guess_was_correct(letter)
       end
     end
     user_makes_guess
@@ -83,5 +84,6 @@ class Game
     end
   end
 end
+
 
 this_game = Game.new
