@@ -3,23 +3,24 @@ require 'pry'
 class Game
   attr_accessor :chosen_letters
   attr_accessor :magic_word
-  attr_accessor :letters_remaining
+  attr_accessor :guesses_remaining
+  attr_accessor :MAGIC_WORD_CONST
 
-  def initialize(chosen_letters = [], letters_remaining = 5, magic_word = 0)
+  def initialize(chosen_letters = [], guesses_remaining = 5, magic_word = 0)
     if magic_word == 0
       @magic_word = create_magic_word
     else
       @magic_word = magic_word
     end
     @chosen_letters = chosen_letters
-    @letters_remaining = letters_remaining
+    @guesses_remaining = guesses_remaining
     
     user_makes_guess
   end
 
   def create_magic_word
     word_file = '5desk.txt'
-    random_word = File.readlines(word_file).sample.strip
+    random_word = File.readlines(word_file).sample.strip.downcase
     @MAGIC_WORD_CONST = random_word.split('')
     random_word.split('')
   end
@@ -35,7 +36,7 @@ class Game
       guess_was_correct(@user_letter)
     else
       puts 'That letter is not included!'
-      @letters_remaining -= 1
+      @guesses_remaining -= 1
       user_makes_guess
     end
   end
@@ -52,7 +53,7 @@ class Game
   end
 
   def show_image
-    case @letters_remaining
+    case @guesses_remaining
     when 5
       display = File.read('./art/five_remaining.txt')
       puts display
@@ -79,10 +80,10 @@ class Game
       display = File.read('./art/winscreen')
       puts display
       exit
-    elsif @letters_remaining <= 0
+    elsif @guesses_remaining <= 0
       display = File.read('./art/you_dead')
       puts display
-      puts 'YOU DEAD.'
+      puts "YOU DEAD. The word was '#{@MAGIC_WORD_CONST.join}'"
       `say "you dead."`
       exit
     end
@@ -99,8 +100,8 @@ class Game
       end
     end
     puts display_array.join
+    puts "[USED LETTERS:#{@chosen_letters}]"
   end
 end
-
 
 this_game = Game.new
