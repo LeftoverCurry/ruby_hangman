@@ -75,13 +75,17 @@ class Game
         display = File.read('./art/winscreen')
         puts display
         exit
-    elsif @letters_remaining.zero?
+    elsif @letters_remaining <= 0
       display = File.read('./art/you_dead')
       puts display
       puts 'YOU DEAD.'
       `say "you dead."`
       exit
     end
+  end
+
+  def letters_display
+
   end
 end
 
