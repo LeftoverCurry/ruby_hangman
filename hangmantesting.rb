@@ -1,16 +1,36 @@
 require 'pry'
+require 'json'
+
+
 
 class Game
   attr_accessor :chosen_letters
   attr_accessor :letters_left_to_guess
   attr_accessor :guesses_remaining
   attr_accessor :RANDOMLY_PICKED_WORD
+  attr_accessor :user_name
 
-  def initialize(chosen_letters = [], guesses_remaining = 5, letters_left_to_guess = false, randomly_picked_word = [])
+  def initialize(user_name, chosen_letters = [], guesses_remaining = 5, letters_left_to_guess = false, randomly_picked_word = [])
     determine_magic_word(letters_left_to_guess, randomly_picked_word)
     @chosen_letters = chosen_letters
     @guesses_remaining = guesses_remaining
+    @user_name = user_name
     interface
+  end
+
+  def to_save_file
+    info = { user_name: @user_name,
+             chosen_letters: @chosen_letters,
+             guesses_remaining: @guesses_remaining,
+             letters_left_to_guess: @letters_left_to_guess,
+             randomly_picked_word: @RANDOMLY_PICKED_WORD }
+    info.to_json
+  end
+
+  def self.from_saved(location)
+    data = File.read(location)
+    saved_data = JSON.parse(data)
+    self.new(saved_data["user_name"], saved_data["chosen_letters"], saved_data["guesses_remaining"], saved_data["letters_left_to_guess"], saved_data["randomly_picked_word"])
   end
 
   def determine_magic_word (letters_left_to_guess, randomly_picked_word)
@@ -38,9 +58,21 @@ class Game
   end
 
   def pull_user_input
-    puts 'Please enter a letter'
+    puts 'Please enter a letter or enter \'1\' to save and quit'
     @user_letter = gets.chomp.downcase
+    if @user_letter == '1'
+      save_and_quit
+    else
     @chosen_letters << @user_letter
+    end
+  end
+
+  def save_and_quit
+    filename = "./saved_games/#{@user_name}.json"
+    File.open(filename, 'w') do |file|
+      file.puts self.to_save_file
+    exit
+    end
   end
 
   def determine_result
@@ -55,14 +87,15 @@ class Game
 
   def check_for_win_or_loss
     if @letters_left_to_guess == []
-      `say "You Won! CONGRATULATIONS!"`
       display = File.read('./art/winscreen')
       puts display
+      puts "The word was '#{@RANDOMLY_PICKED_WORD.join}'"
+      `say "You Won! CONGRATULATIONS!"`
       exit
     elsif @guesses_remaining <= 0
-      display = File.read('./art/you_dead')
+      display = File.read('./art/dead')
       puts display
-      puts "YOU DEAD. The word was '#{@RANDOMLY_PICKED_WORD.join}'"
+      puts "The word was '#{@RANDOMLY_PICKED_WORD.join}'"
       `say "you dead."`
       exit
     end
@@ -115,9 +148,41 @@ class Game
   end
 end
 
-chosen_letters = ['e', 'i']
-guesses_remaining = 4
-letters_left_to_guess = ['h', 'l', 'l', 'o']
-randomly_picked_word = ['h', 'e', 'l', 'l', 'o']
+class Shell
+  def initialize
+    intro
+    create_new_player
+  end
 
-this_game = Game.new(chosen_letters, guesses_remaining, letters_left_to_guess, randomly_picked_word)
+  def intro
+    display = File.read("./art/intro")
+    puts display
+  end
+
+  def create_new_player
+    puts 'Hello, and welcome to Hangman!  What is your name?'
+    @user_name = gets.chomp.downcase
+    if !File.exist?("./saved_games/#{@user_name}.json")
+      Game.new(@user_name)
+    elsif File.exist?("./saved_games/#{@user_name}.json")
+      new_or_saved()
+    end
+  end
+
+  def new_or_saved
+    puts 'Would you like to continue your previous game? Y/N?'
+    use_saved_game = gets.chomp.downcase
+    if use_saved_game == 'y'
+      puts 'Pulling info'
+      Game.from_saved("./saved_games/#{@user_name}.json")
+    elsif use_saved_game == 'n'
+      puts 'starting new game'
+      Game.new(@user_name)
+    else
+      puts 'I\'m sorry, I didn\'t understand!  Please answer with Y or N:'
+      new_or_saved()
+    end
+  end
+end
+
+Shell.new
